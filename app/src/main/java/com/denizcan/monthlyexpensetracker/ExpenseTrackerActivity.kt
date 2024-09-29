@@ -1,9 +1,12 @@
 package com.denizcan.monthlyexpensetracker
 
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.text.InputType
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
@@ -32,8 +35,10 @@ class ExpenseTrackerActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_expense_tracker)
 
+        // SharedPreferences başlatma
         sharedPreferences = getSharedPreferences("ExpensePrefs", Context.MODE_PRIVATE)
 
+        // Görsel öğeleri layout dosyasından bağlama
         incomeInput = findViewById(R.id.incomeInput)
         incomeConfirmButton = findViewById(R.id.incomeConfirmButton)
         incomeDisplay = findViewById(R.id.incomeDisplay)
@@ -45,11 +50,11 @@ class ExpenseTrackerActivity : AppCompatActivity() {
         totalExpensesLabel = findViewById(R.id.totalExpensesLabel)
         remainingAmountLabel = findViewById(R.id.remainingAmountLabel)
 
-        // Harcamalar için adapter
+        // Harcama listesini göstermek için adapter ayarlama
         expenseAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, expenseList)
         expenseListView.adapter = expenseAdapter
 
-        // Verileri SharedPreferences'tan geri yükleme
+        // SharedPreferences'tan kayıtlı gelir ve harcamaları yükleme
         loadIncomeAndExpenses()
 
         // Gelir onaylandığında
@@ -57,6 +62,7 @@ class ExpenseTrackerActivity : AppCompatActivity() {
             val incomeText = incomeInput.text.toString()
             if (incomeText.isNotEmpty()) {
                 incomeAmount = incomeText.toDouble()
+                // Gelir girildikten sonra gösterimi değiştiriyoruz
                 incomeInput.visibility = View.GONE
                 incomeConfirmButton.visibility = View.GONE
                 incomeDisplay.text = "Income: $$incomeAmount"
@@ -71,7 +77,7 @@ class ExpenseTrackerActivity : AppCompatActivity() {
             }
         }
 
-        // Geliri değiştirmek için
+        // Geliri değiştirmek için butona basıldığında gelir input alanını tekrar görünür yapma
         changeIncomeButton.setOnClickListener {
             incomeInput.visibility = View.VISIBLE
             incomeConfirmButton.visibility = View.VISIBLE
@@ -79,37 +85,62 @@ class ExpenseTrackerActivity : AppCompatActivity() {
             changeIncomeButton.visibility = View.GONE
         }
 
-        // Harcama eklemek için
+        // Harcama ekleme butonuna tıklandığında
         addExpenseButton.setOnClickListener {
             showAddExpenseDialog()
         }
 
-        // Harcama silme butonuna tıklama
+        // Harcama silme butonuna tıklandığında
         deleteExpenseButton.setOnClickListener {
             showDeleteExpenseDialog()
         }
 
-        // Listedeki bir harcamayı uzun tıklama ile silmek
+        // Harcama listesindeki bir öğeye uzun tıklayarak silme
         expenseListView.setOnItemLongClickListener { parent, view, position, id ->
             showDeleteExpenseDialog(position)
             true
         }
     }
 
-    // Harcama eklemek için dialog
+    // Menü oluşturma işlemi (Logout seçeneği için)
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.activity_expense_tracker_menu, menu)
+        return true
+    }
+
+    // Menüdeki öğelere tıklanma olayını yönetme
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_logout -> {
+                logout()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    // Çıkış yapma işlemi (Logout)
+    private fun logout() {
+        // MainActivity'ye geri dönüp mevcut aktiviteyi kapatıyoruz
+        val intent = Intent(this, MainActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+        startActivity(intent)
+        finish() // Bu aktiviteyi sonlandır
+    }
+
+    // Harcama eklemek için dialog açma
     private fun showAddExpenseDialog() {
         val builder = AlertDialog.Builder(this)
         builder.setTitle("Add Expense")
 
+        // Dialog için layout oluşturma (harcama ismi ve miktarı için)
         val layout = LinearLayout(this)
         layout.orientation = LinearLayout.VERTICAL
 
-        // Harcama ismi input
         val expenseNameInput = EditText(this)
         expenseNameInput.hint = "Expense Name"
         layout.addView(expenseNameInput)
 
-        // Harcama miktarı input
         val expenseAmountInput = EditText(this)
         expenseAmountInput.hint = "Amount"
         expenseAmountInput.inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
@@ -117,7 +148,7 @@ class ExpenseTrackerActivity : AppCompatActivity() {
 
         builder.setView(layout)
 
-        // Onay butonu
+        // Harcamayı onaylama
         builder.setPositiveButton("Add") { dialog, which ->
             val expenseName = expenseNameInput.text.toString()
             val expenseAmountText = expenseAmountInput.text.toString()
@@ -146,7 +177,7 @@ class ExpenseTrackerActivity : AppCompatActivity() {
         builder.show()
     }
 
-    // Harcama silmek için dialog (silme butonuna basıldığında tüm harcamaları listeleyerek)
+    // Harcama silmek için dialog açma (silme butonuna tıklanınca)
     private fun showDeleteExpenseDialog() {
         if (expenseList.isEmpty()) {
             Toast.makeText(this, "No expenses to delete", Toast.LENGTH_SHORT).show()
@@ -177,7 +208,7 @@ class ExpenseTrackerActivity : AppCompatActivity() {
         builder.show()
     }
 
-    // Listedeki bir harcamayı silmek için uzun tıklama ile
+    // Harcamayı uzun tıklama ile silme
     private fun showDeleteExpenseDialog(position: Int) {
         val builder = AlertDialog.Builder(this)
         builder.setTitle("Delete Expense")
@@ -205,20 +236,20 @@ class ExpenseTrackerActivity : AppCompatActivity() {
         builder.show()
     }
 
-    // Kalan miktarı güncelle
+    // Kalan miktarı güncelleme
     private fun updateRemainingAmount() {
         val remainingAmount = incomeAmount - totalExpenses
         remainingAmountLabel.text = "Remaining Amount: $$remainingAmount"
     }
 
-    // Geliri kaydetme
+    // Geliri SharedPreferences'a kaydetme
     private fun saveIncome(income: Double) {
         val editor = sharedPreferences.edit()
         editor.putFloat("income", income.toFloat())
         editor.apply()
     }
 
-    // Harcamaları kaydetme
+    // Harcamaları SharedPreferences'a kaydetme
     private fun saveExpenses() {
         val editor = sharedPreferences.edit()
         editor.putStringSet("expenses", expenseList.toSet())
@@ -226,7 +257,7 @@ class ExpenseTrackerActivity : AppCompatActivity() {
         editor.apply()
     }
 
-    // Gelir ve harcamaları yükleme
+    // Gelir ve harcamaları SharedPreferences'tan yükleme
     private fun loadIncomeAndExpenses() {
         val savedIncome = sharedPreferences.getFloat("income", 0.0f)
         if (savedIncome != 0.0f) {
@@ -240,7 +271,6 @@ class ExpenseTrackerActivity : AppCompatActivity() {
 
         val savedExpenses = sharedPreferences.getStringSet("expenses", emptySet())
         if (!savedExpenses.isNullOrEmpty()) {
-            // Harcamaları yüklemeden önce listeyi temizle
             expenseList.clear()
             expenseList.addAll(savedExpenses)
             expenseAdapter.notifyDataSetChanged()
@@ -250,5 +280,4 @@ class ExpenseTrackerActivity : AppCompatActivity() {
             updateRemainingAmount()
         }
     }
-
 }
