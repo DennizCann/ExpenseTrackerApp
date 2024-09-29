@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "883430043564",
+    "project_id": "monthlyexpensetracker-db092",
+    "storage_bucket": "monthlyexpensetracker-db092.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:883430043564:android:04306aed0a9310e8f71409",
+        "android_client_info": {
+          "package_name": "com.denizcan.monthlyexpensetracker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAAYrfvIIdRTDS_upo9JhOk2MZU_haI2v8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
